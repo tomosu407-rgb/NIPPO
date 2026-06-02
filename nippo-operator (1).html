@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nippo - Input Operator</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#1a1a2e;font-size:16px;padding-bottom:40px}
+    .topbar{background:#1a3a5c;color:#fff;padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+    .topbar h1{font-size:18px;font-weight:600}
+    .topbar-sub{font-size:11px;opacity:.7;margin-top:2px}
+    .online{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:5px;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .container{max-width:600px;margin:0 auto;padding:14px}
+    .card{background:#fff;border-radius:14px;padding:18px;margin-bottom:14px;border:1px solid #e0e4ee;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+    .card-title{font-size:13px;font-weight:700;color:#1a3a5c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #eef2f7}
+    label{display:block;font-size:11px;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;margin-top:12px}
+    label:first-child{margin-top:0}
+    select,input,textarea{width:100%;padding:13px 14px;border:1.5px solid #d0d5e0;border-radius:10px;font-size:16px;color:#1a1a2e;background:#fff;transition:border-color .2s}
+    select:focus,input:focus,textarea:focus{outline:none;border-color:#1a3a5c;box-shadow:0 0 0 3px rgba(26,58,92,.1)}
+    input[readonly]{background:#f0f4f8;color:#1a3a5c;font-weight:700;cursor:default}
+    input[readonly]:focus{border-color:#d0d5e0;box-shadow:none}
+    textarea{min-height:70px;resize:vertical;font-size:15px}
+    .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .shift-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+    .ot-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:4px}
+    .sbtn{padding:14px 8px;border:1.5px solid #d0d5e0;border-radius:10px;background:#f4f7fb;color:#555;font-size:13px;font-weight:600;cursor:pointer;text-align:center;line-height:1.4;transition:all .15s}
+    .sbtn:active{transform:scale(.97)}
+    .sbtn.active{background:#1a3a5c;color:#fff;border-color:#1a3a5c}
+    .sbtn small{display:block;font-size:11px;font-weight:400;margin-top:2px;opacity:.8}
+    .total-info{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:9px 12px;font-size:12px;color:#92400e;margin-top:6px}
+    .btn-submit{width:100%;padding:16px;background:#1a3a5c;color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:700;cursor:pointer;margin-top:4px;transition:all .15s}
+    .btn-submit:hover{background:#0f2a45}
+    .btn-submit:active{transform:scale(.98)}
+    .btn-submit:disabled{background:#9aafbf;cursor:not-allowed;transform:none}
+    .btn-reset{width:100%;padding:12px;background:#f0f4f8;color:#555;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-top:8px}
+    .mesin-info{background:#eef4ff;border:1px solid #c7d9f0;border-radius:10px;padding:12px 14px;font-size:13px;color:#1a3a5c;font-weight:600;margin-top:10px;min-height:42px}
+    .msg{border-radius:10px;padding:12px 14px;font-size:13px;font-weight:600;margin-bottom:12px;display:none}
+    .msg.show{display:block}
+    .msg-ok{background:#f0fdf4;border:1px solid #86efac;color:#166534}
+    .msg-err{background:#fef2f2;border:1px solid #fca5a5;color:#991b1b}
+    .spinner-wrap{display:none;text-align:center;padding:10px}
+    .spinner-wrap.show{display:block}
+    .spinner{display:inline-block;width:24px;height:24px;border:3px solid #ddd;border-top-color:#1a3a5c;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @media(max-width:480px){
+      .ot-btns{grid-template-columns:repeat(3,1fr)}
+      .row3{grid-template-columns:1fr 1fr}
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar h1" style="font-size:18px;font-weight:700">📋 Nippo Operator</div>
+    <div style="font-size:11px;opacity:.7;margin-top:2px"><span class="online"></span>Terhubung ke server</div>
+  </div>
+  <div style="font-size:12px;background:rgba(255,255,255,.15);padding:4px 10px;border-radius:20px">Input Harian</div>
+</div>
+
+<div class="container">
+  <div class="msg msg-ok" id="msgOk">✅ Nippo berhasil disimpan!</div>
+  <div class="msg msg-err" id="msgErr">❌ Gagal menyimpan. Cek koneksi internet lalu coba lagi.</div>
+
+  <!-- DEPARTEMEN & MESIN -->
+  <div class="card">
+    <div class="card-title">1. Pilih Mesin</div>
+    <label>Departemen</label>
+    <select id="departemen" onchange="departemenChanged()">
+      <option value="">— Pilih departemen —</option>
+      <option>CNC</option><option>PRESS</option><option>FURANJI</option>
+      <option>BORUBAN</option><option>TENJO</option><option>KENMA / RSG</option>
+    </select>
+    <label>Nama Mesin</label>
+    <select id="namaMesin" onchange="machineChanged()">
+      <option value="">Pilih departemen dulu</option>
+    </select>
+    <div class="mesin-info" id="mesinInfo">Pilih departemen dan mesin terlebih dahulu.</div>
+    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="sbtn active" id="btnBaru" onclick="modeInput('baru')" style="padding:12px">✏️ Input Baru</button>
+      <button class="sbtn" id="btnKemarin" onclick="modeInput('kemarin')" style="padding:12px">📋 Sama Kemarin</button>
+    </div>
+  </div>
+
+  <!-- INFO OPERATOR -->
+  <div class="card">
+    <div class="card-title">2. Data Operator & Barang</div>
+    <div class="row2">
+      <div>
+        <label>Tanggal</label>
+        <input type="date" id="tanggal">
+      </div>
+      <div>
+        <label>Nama Operator</label>
+        <select id="operator">
+          <option value="">— Pilih —</option>
+          <option>TOMO</option><option>GIAR</option><option>NOGUCHI</option>
+          <option>AMIN</option><option>AFI</option><option>Lainnya</option>
+        </select>
+      </div>
+    </div>
+    <label>Nomor Barang</label>
+    <input type="text" id="nomorBarang" placeholder="Contoh: A-12345" oninput="updateAutoTotal()">
+    <label>Nama Barang</label>
+    <input type="text" id="namaBarang" placeholder="Contoh: SHAFT" oninput="updateAutoTotal()">
+    <label>Tahapan Proses</label>
+    <select id="proses" onchange="updateAutoTotal()">
+      <option value="">— Pilih proses —</option>
+      <option>NCL</option><option>NC1</option><option>NC2</option>
+      <option>NC3</option><option>NC4</option><option>NC NEJI</option><option>ANA AKE</option>
+    </select>
+    <label>Catatan Barang <span style="font-weight:400;font-size:10px;color:#aaa">(opsional)</span></label>
+    <input type="text" id="catatanBarang" placeholder="Contoh: toleransi ketat">
+  </div>
+
+  <!-- JAM KERJA -->
+  <div class="card">
+    <div class="card-title">3. Jam Kerja</div>
+    <label>Shift</label>
+    <div class="shift-btns">
+      <button class="sbtn active" id="btnPagi" onclick="setShift('pagi')">🌅 Pagi<small>08:00 – 17:00 (8 jam)</small></button>
+      <button class="sbtn" id="btnMalam" onclick="setShift('malam')">🌙 Malam<small>17:00 – 02:00 (8 jam)</small></button>
+    </div>
+    <label style="margin-top:14px">Tambahan Lembur</label>
+    <div class="ot-btns">
+      <button class="sbtn active" id="ot0" onclick="setOt(0)">0 jam</button>
+      <button class="sbtn" id="ot1" onclick="setOt(1)">+1 jam</button>
+      <button class="sbtn" id="ot2" onclick="setOt(2)">+2 jam</button>
+      <button class="sbtn" id="ot3" onclick="setOt(3)">+3 jam</button>
+      <button class="sbtn" id="ot4" onclick="setOt(4)">+4 jam</button>
+    </div>
+    <div class="row3" style="margin-top:12px">
+      <div><label>Jam Mulai</label><input type="time" id="jamMulai" readonly></div>
+      <div><label>Jam Selesai</label><input type="time" id="jamSelesai" readonly></div>
+      <div><label>Total Jam</label><input type="text" id="jamTotal" readonly></div>
+    </div>
+    <div class="row2" style="margin-top:10px">
+      <div><label>Dandori (jam)</label><input type="number" step="0.1" min="0" id="dandori" value="0" oninput="hitungKerja()"></div>
+      <div><label>Waktu Terbuang (jam)</label><input type="number" step="0.1" min="0" id="terbuang" value="0" oninput="hitungKerja()"></div>
+    </div>
+    <div><label>Kerja Sebenarnya (jam)</label><input type="text" id="kerjaNyata" readonly></div>
+    <label style="margin-top:10px">Alasan Waktu Terbuang</label>
+    <select id="alasan">
+      <option>Tidak ada</option>
+      <option>Masalah mesin</option>
+      <option>Menunggu bahan</option>
+      <option>Menunggu alat</option>
+      <option>Cek kualitas</option>
+      <option>Dandori / ganti barang</option>
+      <option>Membantu mesin lain</option>
+      <option>Lainnya</option>
+    </select>
+  </div>
+
+  <!-- HASIL PRODUKSI -->
+  <div class="card">
+    <div class="card-title">4. Hasil Produksi</div>
+    <div class="row2">
+      <div>
+        <label>Hasil Hari Ini (pcs)</label>
+        <input type="number" min="0" id="hasil" value="0" oninput="updateAutoTotal()" style="font-size:22px;font-weight:700;text-align:center;color:#1a7c4e">
+      </div>
+      <div>
+        <label>Total Barang (otomatis)</label>
+        <input type="number" id="totalBarang" readonly style="font-size:22px;font-weight:700;text-align:center;color:#1a3a5c">
+      </div>
+    </div>
+    <div class="total-info" id="totalInfo">Total terakhir 0 + hari ini 0 = 0</div>
+    <label style="margin-top:14px">Catatan / Kendala <span style="font-weight:400;font-size:10px;color:#aaa">(opsional)</span></label>
+    <textarea id="catatan" placeholder="Contoh: mesin sempat berhenti 30 menit karena menunggu bahan"></textarea>
+  </div>
+
+  <!-- TOMBOL SIMPAN -->
+  <div class="spinner-wrap" id="spinnerWrap">
+    <div class="spinner"></div> Menyimpan ke server...
+  </div>
+  <button class="btn-submit" id="btnSubmit" onclick="submitNippo()">✅ Simpan Nippo</button>
+  <button class="btn-reset" onclick="resetForm()">🔄 Reset Form</button>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbzeEJZBurP7nSqsvGtTJ_nCHEn31BH9d3pGLnJsDHXebGx3iez_f1f3Fn-LCdG7rVYI/exec";
+
+const machineMap = {
+  "CNC":["SC 200","TMC12-1","SL25","CL25B","SC250","CL152","CL151","TMC12-2"],
+  "PRESS":["PRESS-01","PRESS-02","PRESS-03"],
+  "FURANJI":["FURANJI-01","FURANJI-02"],
+  "BORUBAN":["BORUBAN-01","BORUBAN-02"],
+  "TENJO":["TENJO-01","TENJO-02"],
+  "KENMA / RSG":["RSG-01","RSG-02","KENMA-01","KENMA-02"]
+};
+
+let cachedData = [];
+let currentShift = "pagi";
+let currentOt = 0;
+
+/* INIT */
+window.onload = function(){
+  document.getElementById("tanggal").value = todayStr();
+  updateWorkTime();
+  updateAutoTotal();
+  loadData();
+};
+
+function todayStr(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+  return y+"-"+m+"-"+day;
+}
+
+/* LOAD DATA DARI SHEETS (untuk cek total terakhir) */
+async function loadData(){
+  try {
+    const res = await fetch(API_URL + "?t=" + Date.now());
+    const json = await res.json();
+    if(json.ok && json.rows && json.rows.length > 1){
+      const h = json.rows[0];
+      cachedData = json.rows.slice(1).map(r => {
+        const o = {};
+        h.forEach((k,i) => o[k] = String(r[i]||""));
+        return o;
+      });
+    }
+  } catch(e){ console.error(e); }
+}
+
+/* DEPARTEMEN & MESIN */
+function departemenChanged(){
+  const dep = document.getElementById("departemen").value;
+  const sel = document.getElementById("namaMesin");
+  sel.innerHTML = "";
+  if(!dep){ sel.innerHTML='<option value="">Pilih departemen dulu</option>'; mesinInfo(); return; }
+  sel.innerHTML = '<option value="">— Pilih mesin —</option>';
+  machineMap[dep].forEach(m => {
+    const o = document.createElement("option");
+    o.value = m; o.textContent = m; sel.appendChild(o);
+  });
+  mesinInfo();
+}
+
+function machineChanged(){ mesinInfo(); updateAutoTotal(); }
+
+function mesinInfo(){
+  const dep = document.getElementById("departemen").value;
+  const mesin = document.getElementById("namaMesin").value;
+  const el = document.getElementById("mesinInfo");
+  if(!dep||!mesin){ el.textContent = "Pilih departemen dan mesin terlebih dahulu."; return; }
+  const last = findLastByMachine(dep, mesin);
+  if(last){
+    el.innerHTML = "<b>" + dep + " / " + mesin + "</b><br>Terakhir: " + last["Nama Barang"] + " | Total: <b>" + last["Total Barang"] + " pcs</b>";
+  } else {
+    el.textContent = dep + " / " + mesin + " — belum ada data sebelumnya.";
+  }
+}
+
+/* MODE INPUT */
+function modeInput(mode){
+  document.getElementById("btnBaru").classList.toggle("active", mode==="baru");
+  document.getElementById("btnKemarin").classList.toggle("active", mode==="kemarin");
+  if(mode === "kemarin"){
+    const dep = document.getElementById("departemen").value;
+    const mesin = document.getElementById("namaMesin").value;
+    if(!dep||!mesin){ alert("Pilih departemen dan mesin dulu."); return; }
+    const last = findLastByMachine(dep, mesin);
+    if(!last){ alert("Belum ada data untuk mesin ini. Gunakan Input Baru."); return; }
+    document.getElementById("operator").value = last["Operator"]||"";
+    document.getElementById("nomorBarang").value = last["Nomor Barang"]||"";
+    document.getElementById("namaBarang").value = last["Nama Barang"]||"";
+    document.getElementById("proses").value = last["Proses"]||"";
+    document.getElementById("catatanBarang").value = last["Catatan Barang"]||"";
+    document.getElementById("hasil").value = 0;
+    document.getElementById("dandori").value = 0;
+    document.getElementById("terbuang").value = 0;
+    document.getElementById("catatan").value = "";
+    updateAutoTotal();
+  }
+}
+
+/* JAM KERJA */
+function addHours(time, h){
+  let [hh,mm] = time.split(":").map(Number);
+  hh = (hh+h)%24;
+  return String(hh).padStart(2,"0")+":"+String(mm).padStart(2,"0");
+}
+
+function updateWorkTime(){
+  const start = currentShift==="pagi"?"08:00":"17:00";
+  const baseEnd = currentShift==="pagi"?"17:00":"02:00";
+  const end = addHours(baseEnd, currentOt);
+  const totalJam = 8 + currentOt;
+  document.getElementById("jamMulai").value = start;
+  document.getElementById("jamSelesai").value = end;
+  document.getElementById("jamTotal").value = totalJam + " jam" + (currentOt>0?" (lembur "+currentOt+"j)":"");
+  document.getElementById("dandori").value = document.getElementById("dandori").value||0;
+  hitungKerja();
+}
+
+function setShift(s){
+  currentShift = s;
+  document.getElementById("btnPagi").classList.toggle("active", s==="pagi");
+  document.getElementById("btnMalam").classList.toggle("active", s==="malam");
+  updateWorkTime();
+}
+
+function setOt(h){
+  currentOt = h;
+  for(let i=0;i<=4;i++) document.getElementById("ot"+i).classList.toggle("active", i===h);
+  updateWorkTime();
+}
+
+function hitungKerja(){
+  const efektif = 8 + currentOt;
+  const d = parseFloat(document.getElementById("dandori").value||0);
+  const t = parseFloat(document.getElementById("terbuang").value||0);
+  document.getElementById("kerjaNyata").value = Math.max(efektif-d-t,0).toFixed(1) + " jam";
+}
+
+/* TOTAL OTOMATIS */
+function updateAutoTotal(){
+  const dep = document.getElementById("departemen").value;
+  const mesin = document.getElementById("namaMesin").value;
+  const nomor = document.getElementById("nomorBarang").value;
+  const nama = document.getElementById("namaBarang").value;
+  const proses = document.getElementById("proses").value;
+  const hari = Number(document.getElementById("hasil").value||0);
+
+  let prev = 0;
+  if(dep&&mesin&&nomor&&nama&&proses){
+    const last = findLastByPart(dep,mesin,nomor,nama,proses);
+    if(last) prev = Number(last["Total Barang"]||0);
+  }
+  document.getElementById("totalBarang").value = prev + hari;
+  document.getElementById("totalInfo").textContent = "Total terakhir " + prev + " + hari ini " + hari + " = " + (prev+hari);
+}
+
+/* SUBMIT */
+async function submitNippo(){
+  const dep = document.getElementById("departemen").value;
+  const mesin = document.getElementById("namaMesin").value;
+  const op = document.getElementById("operator").value;
+  const nomor = document.getElementById("nomorBarang").value.trim();
+  const nama = document.getElementById("namaBarang").value.trim();
+  const proses = document.getElementById("proses").value;
+
+  const checks = [
+    [!dep,"Departemen"],[!mesin,"Nama Mesin"],[!op,"Nama Operator"],
+    [!nomor,"Nomor Barang"],[!nama,"Nama Barang"],[!proses,"Tahapan Proses"]
+  ];
+  for(const [fail, label] of checks){
+    if(fail){ alert('Field "'+label+'" wajib diisi.'); return; }
+  }
+
+  const btn = document.getElementById("btnSubmit");
+  btn.disabled = true;
+  document.getElementById("spinnerWrap").classList.add("show");
+
+  const efektif = 8 + currentOt;
+  const row = {
+    action: "save",
+    "ID": String(Date.now()),
+    "Status": "Belum Dicek",
+    "Tanggal": document.getElementById("tanggal").value,
+    "Departemen": dep,
+    "Nama Mesin": mesin,
+    "Shift": currentShift==="pagi"?"Pagi 08:00–17:00":"Malam 17:00–02:00",
+    "Lembur": currentOt,
+    "Jam Mulai": document.getElementById("jamMulai").value,
+    "Jam Selesai": document.getElementById("jamSelesai").value,
+    "Operator": op,
+    "Nomor Barang": nomor,
+    "Nama Barang": nama,
+    "Proses": proses,
+    "Catatan Barang": document.getElementById("catatanBarang").value,
+    "Jam Efektif": efektif,
+    "Dandori": document.getElementById("dandori").value||0,
+    "Waktu Terbuang": document.getElementById("terbuang").value||0,
+    "Kerja Sebenarnya": Math.max(efektif - parseFloat(document.getElementById("dandori").value||0) - parseFloat(document.getElementById("terbuang").value||0),0).toFixed(1),
+    "Hasil Hari Ini": document.getElementById("hasil").value||0,
+    "Total Barang": document.getElementById("totalBarang").value||0,
+    "Alasan": document.getElementById("alasan").value,
+    "Catatan": document.getElementById("catatan").value
+  };
+
+  try {
+    const res = await fetch(API_URL, {method:"POST", body:JSON.stringify(row)});
+    const json = await res.json();
+    if(!json.ok) throw new Error(json.msg);
+
+    cachedData.push(row);
+    showMsg("ok");
+    resetFormFields();
+    await loadData();
+    updateAutoTotal();
+    mesinInfo();
+  } catch(e){
+    showMsg("err");
+    console.error(e);
+  }
+
+  btn.disabled = false;
+  document.getElementById("spinnerWrap").classList.remove("show");
+}
+
+function showMsg(type){
+  const ok = document.getElementById("msgOk");
+  const err = document.getElementById("msgErr");
+  ok.classList.remove("show"); err.classList.remove("show");
+  if(type==="ok"){ ok.classList.add("show"); setTimeout(()=>ok.classList.remove("show"),4000); ok.scrollIntoView({behavior:"smooth",block:"center"}); }
+  else { err.classList.add("show"); setTimeout(()=>err.classList.remove("show"),5000); }
+}
+
+function resetFormFields(){
+  document.getElementById("hasil").value = 0;
+  document.getElementById("dandori").value = 0;
+  document.getElementById("terbuang").value = 0;
+  document.getElementById("catatan").value = "";
+  document.getElementById("alasan").value = "Tidak ada";
+  hitungKerja();
+  updateAutoTotal();
+}
+
+function resetForm(){
+  ["nomorBarang","namaBarang","catatanBarang","catatan"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("operator").value="";
+  document.getElementById("proses").value="";
+  resetFormFields();
+}
+
+/* HELPERS */
+function findLastByMachine(dep,mesin){
+  for(let i=cachedData.length-1;i>=0;i--){
+    const r=cachedData[i];
+    if(r["Departemen"]===dep&&r["Nama Mesin"]===mesin) return r;
+  }
+  return null;
+}
+function findLastByPart(dep,mesin,nomor,nama,proses){
+  const n=(nomor||"").trim().toUpperCase();
+  const nm=(nama||"").trim().toUpperCase();
+  const p=(proses||"").trim().toUpperCase();
+  for(let i=cachedData.length-1;i>=0;i--){
+    const r=cachedData[i];
+    if(r["Departemen"]===dep&&r["Nama Mesin"]===mesin&&
+      (r["Nomor Barang"]||"").trim().toUpperCase()===n&&
+      (r["Nama Barang"]||"").trim().toUpperCase()===nm&&
+      (r["Proses"]||"").trim().toUpperCase()===p) return r;
+  }
+  return null;
+}
+</script>
+</body>
+</html>

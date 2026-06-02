@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nippo - Dashboard Kantor</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#1a1a2e;font-size:14px}
+    .topbar{background:#1a3a5c;color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+    .topbar h1{font-size:18px;font-weight:700}
+    .topbar-sub{font-size:11px;opacity:.7;margin-top:2px}
+    .online{display:inline-block;width:8px;height:8px;border-radius:50%;background:#4ade80;margin-right:5px;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .topbar-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .badge-sync{font-size:11px;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.2);color:#fff}
+    .btn-refresh{padding:7px 14px;border:1.5px solid rgba(255,255,255,.4);border-radius:8px;background:transparent;color:#fff;font-size:12px;font-weight:600;cursor:pointer}
+    .btn-refresh:hover{background:rgba(255,255,255,.1)}
+    .container{max-width:1300px;margin:0 auto;padding:16px}
+
+    /* SUMMARY CARDS */
+    .summary-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+    .sum-card{background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #e0e4ee;box-shadow:0 2px 6px rgba(0,0,0,.05)}
+    .sum-card .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#888;margin-bottom:6px}
+    .sum-card .value{font-size:26px;font-weight:700;color:#1a3a5c}
+    .sum-card .sub{font-size:11px;color:#aaa;margin-top:3px}
+    .sum-card.warn .value{color:#b45309}
+    .sum-card.good .value{color:#166534}
+    .sum-card.blue .value{color:#1e40af}
+
+    /* TABS */
+    .tabs{display:flex;gap:0;border-bottom:2px solid #e0e4ee;margin-bottom:16px}
+    .tab{padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:#888;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .15s}
+    .tab.active{color:#1a3a5c;border-bottom-color:#1a3a5c}
+    .tab:hover{color:#1a3a5c}
+    .panel{display:none}
+    .panel.active{display:block}
+
+    /* FILTER BAR */
+    .filter-bar{background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:14px;border:1px solid #e0e4ee;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+    .filter-bar>div{display:flex;flex-direction:column;gap:4px}
+    .filter-bar label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#888}
+    .filter-bar input,.filter-bar select{padding:8px 11px;border:1.5px solid #d0d5e0;border-radius:8px;font-size:13px;background:#fff;color:#1a1a2e}
+    .filter-bar input:focus,.filter-bar select:focus{outline:none;border-color:#1a3a5c}
+    .btn-filter{padding:9px 16px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+    .btn-blue{background:#1a3a5c;color:#fff}
+    .btn-blue:hover{background:#0f2a45}
+    .btn-green{background:#1a7c4e;color:#fff}
+    .btn-green:hover{background:#145c39}
+
+    /* REKAP HARIAN */
+    .rekap-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+    .mesin-card{background:#fff;border-radius:12px;border:1px solid #e0e4ee;box-shadow:0 2px 6px rgba(0,0,0,.04);overflow:hidden}
+    .mesin-card-head{background:#f4f7fb;padding:12px 14px;border-bottom:1px solid #e0e4ee;display:flex;align-items:center;justify-content:space-between}
+    .mesin-card-head .mesin-name{font-weight:700;font-size:14px;color:#1a3a5c}
+    .mesin-card-head .dep-badge{font-size:10px;background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:10px;font-weight:600}
+    .mesin-card-body{padding:12px 14px}
+    .mesin-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f0f2f5}
+    .mesin-row:last-child{border-bottom:none}
+    .mesin-row .left{flex:1}
+    .mesin-row .op-name{font-weight:600;font-size:13px;color:#1a1a2e}
+    .mesin-row .barang{font-size:11px;color:#666;margin-top:1px}
+    .mesin-row .right{text-align:right}
+    .mesin-row .hasil{font-size:18px;font-weight:700;color:#1a7c4e}
+    .mesin-row .hasil-sub{font-size:10px;color:#aaa}
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+    .badge-warn{background:#fef9c3;color:#854d0e}
+    .badge-ok{background:#dcfce7;color:#166534}
+    .btn-cek{padding:4px 10px;font-size:11px;border-radius:6px;border:1px solid #bae6fd;background:#e0f2fe;color:#0369a1;cursor:pointer;font-weight:600;margin-top:4px}
+    .btn-cek.sudah{background:#dcfce7;color:#166534;border-color:#a7f3d0}
+    .empty-mesin{text-align:center;padding:20px;color:#aaa;font-size:13px}
+
+    /* TABEL DETAIL */
+    .tabel-wrap{background:#fff;border-radius:12px;border:1px solid #e0e4ee;overflow:hidden}
+    .tabel-scroll{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:12px;min-width:700px}
+    th{background:#f4f7fb;padding:10px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#555;border-bottom:1px solid #e0e4ee;white-space:nowrap}
+    td{padding:10px 12px;border-bottom:1px solid #f0f2f5;vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:#f8faff}
+    td.num{text-align:right;font-weight:700}
+    td.big-num{font-size:16px;color:#1a7c4e;font-weight:700}
+
+    /* BELUM INPUT */
+    .belum-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+    .belum-card{background:#fff;border-radius:10px;border:1.5px solid #fde68a;padding:12px 14px}
+    .belum-card .mesin{font-weight:700;color:#1a3a5c;font-size:14px}
+    .belum-card .dep{font-size:11px;color:#888;margin-top:2px}
+    .belum-card .last{font-size:11px;color:#b45309;margin-top:6px}
+    .all-ok{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:20px;text-align:center;color:#166534;font-weight:600;font-size:14px}
+
+    /* LOADING */
+    .loading-bar{height:3px;background:#e0e4ee;border-radius:2px;margin-bottom:14px;overflow:hidden;display:none}
+    .loading-bar.show{display:block}
+    .loading-bar-inner{height:100%;background:#1a3a5c;border-radius:2px;animation:loading 1.2s ease-in-out infinite}
+    @keyframes loading{0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%}}
+
+    @media(max-width:768px){
+      .summary-grid{grid-template-columns:repeat(2,1fr)}
+      .rekap-grid{grid-template-columns:1fr}
+      .belum-grid{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div style="font-size:18px;font-weight:700">📊 Dashboard Kantor — Nippo Digital</div>
+    <div style="font-size:11px;opacity:.7;margin-top:2px"><span class="online"></span>Data real-time dari Google Sheets</div>
+  </div>
+  <div class="topbar-right">
+    <span class="badge-sync" id="badgeSync">⟳ Memuat...</span>
+    <button class="btn-refresh" onclick="loadData()">🔄 Refresh</button>
+    <button class="btn-refresh" onclick="exportCSV()">⬇ Export CSV</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="loading-bar" id="loadingBar"><div class="loading-bar-inner"></div></div>
+
+  <!-- SUMMARY -->
+  <div class="summary-grid">
+    <div class="sum-card blue">
+      <div class="label">Total Laporan Masuk</div>
+      <div class="value" id="sumTotal">–</div>
+      <div class="sub">semua waktu</div>
+    </div>
+    <div class="sum-card blue">
+      <div class="label">Laporan Hari Ini</div>
+      <div class="value" id="sumHariIni">–</div>
+      <div class="sub" id="sumTanggal">–</div>
+    </div>
+    <div class="sum-card good">
+      <div class="label">Total Produksi Hari Ini</div>
+      <div class="value" id="sumProduksi">–</div>
+      <div class="sub">pcs</div>
+    </div>
+    <div class="sum-card warn">
+      <div class="label">Belum Dicek</div>
+      <div class="value" id="sumBelumCek">–</div>
+      <div class="sub">laporan</div>
+    </div>
+    <div class="sum-card warn">
+      <div class="label">Mesin Belum Input</div>
+      <div class="value" id="sumBelumInput">–</div>
+      <div class="sub">dari semua mesin</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('rekap',this)">📋 Rekap Harian</div>
+    <div class="tab" onclick="switchTab('detail',this)">🔍 Data Detail</div>
+    <div class="tab" onclick="switchTab('belum',this)">⚠️ Belum Input</div>
+  </div>
+
+  <!-- TAB: REKAP HARIAN -->
+  <div class="panel active" id="panel-rekap">
+    <div class="filter-bar">
+      <div>
+        <label>Tanggal</label>
+        <input type="date" id="rekTgl">
+      </div>
+      <div>
+        <label>Departemen</label>
+        <select id="rekDep">
+          <option value="">Semua Departemen</option>
+          <option>CNC</option><option>PRESS</option><option>FURANJI</option>
+          <option>BORUBAN</option><option>TENJO</option><option>KENMA / RSG</option>
+        </select>
+      </div>
+      <button class="btn-filter btn-blue" onclick="renderRekap()">🔍 Tampilkan</button>
+      <button class="btn-filter" style="background:#6b7280;color:#fff" onclick="document.getElementById('rekTgl').value='';renderRekap()">📋 Semua Tanggal</button>
+    </div>
+    <div class="rekap-grid" id="rekapGrid">
+      <div style="grid-column:1/-1;text-align:center;padding:30px;color:#aaa">Memuat data...</div>
+    </div>
+  </div>
+
+  <!-- TAB: DATA DETAIL -->
+  <div class="panel" id="panel-detail">
+    <div class="filter-bar">
+      <div>
+        <label>Tanggal</label>
+        <input type="date" id="detTgl">
+      </div>
+      <div>
+        <label>Departemen</label>
+        <select id="detDep">
+          <option value="">Semua Departemen</option>
+          <option>CNC</option><option>PRESS</option><option>FURANJI</option>
+          <option>BORUBAN</option><option>TENJO</option><option>KENMA / RSG</option>
+        </select>
+      </div>
+      <div>
+        <label>Mesin</label>
+        <input type="text" id="detMesin" placeholder="Cari mesin..." style="width:120px">
+      </div>
+      <div>
+        <label>Operator</label>
+        <input type="text" id="detOp" placeholder="Cari nama..." style="width:120px">
+      </div>
+      <button class="btn-filter btn-blue" onclick="renderDetail()">🔍 Filter</button>
+      <button class="btn-filter btn-green" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+    <div class="tabel-wrap">
+      <div class="tabel-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Tanggal</th>
+              <th>Departemen</th>
+              <th>Mesin</th>
+              <th>Operator</th>
+              <th>Shift</th>
+              <th>Nomor Barang</th>
+              <th>Nama Barang</th>
+              <th>Proses</th>
+              <th>Jam Kerja</th>
+              <th>Dandori</th>
+              <th>Terbuang</th>
+              <th>Alasan</th>
+              <th>Hasil</th>
+              <th>Total</th>
+              <th>Catatan</th>
+            </tr>
+          </thead>
+          <tbody id="detailBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <p id="detailEmpty" style="text-align:center;padding:20px;color:#aaa;display:none">Tidak ada data untuk filter ini.</p>
+  </div>
+
+  <!-- TAB: BELUM INPUT -->
+  <div class="panel" id="panel-belum">
+    <div class="filter-bar">
+      <div>
+        <label>Cek tanggal</label>
+        <input type="date" id="belumTgl">
+      </div>
+      <button class="btn-filter btn-blue" onclick="renderBelum()">🔍 Cek</button>
+    </div>
+    <div id="belumGrid"></div>
+  </div>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbzeEJZBurP7nSqsvGtTJ_nCHEn31BH9d3pGLnJsDHXebGx3iez_f1f3Fn-LCdG7rVYI/exec";
+
+/* Semua mesin yang ada di pabrik */
+const SEMUA_MESIN = [
+  {dep:"CNC", mesin:"SC 200"},{dep:"CNC",mesin:"TMC12-1"},{dep:"CNC",mesin:"SL25"},
+  {dep:"CNC",mesin:"CL25B"},{dep:"CNC",mesin:"SC250"},{dep:"CNC",mesin:"CL152"},
+  {dep:"CNC",mesin:"CL151"},{dep:"CNC",mesin:"TMC12-2"},
+  {dep:"PRESS",mesin:"PRESS-01"},{dep:"PRESS",mesin:"PRESS-02"},{dep:"PRESS",mesin:"PRESS-03"},
+  {dep:"FURANJI",mesin:"FURANJI-01"},{dep:"FURANJI",mesin:"FURANJI-02"},
+  {dep:"BORUBAN",mesin:"BORUBAN-01"},{dep:"BORUBAN",mesin:"BORUBAN-02"},
+  {dep:"TENJO",mesin:"TENJO-01"},{dep:"TENJO",mesin:"TENJO-02"},
+  {dep:"KENMA / RSG",mesin:"RSG-01"},{dep:"KENMA / RSG",mesin:"RSG-02"},
+  {dep:"KENMA / RSG",mesin:"KENMA-01"},{dep:"KENMA / RSG",mesin:"KENMA-02"}
+];
+
+let allData = [];
+let activeTab = "rekap";
+
+/* INIT */
+window.onload = function(){
+  const today = todayStr();
+  document.getElementById("rekTgl").value = today;
+  document.getElementById("detTgl").value = today;
+  document.getElementById("belumTgl").value = today;
+  document.getElementById("sumTanggal").textContent = formatTgl(today);
+  loadData();
+};
+
+function todayStr(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,"0");
+  const day = String(d.getDate()).padStart(2,"0");
+  return y+"-"+m+"-"+day;
+}
+function formatTgl(str){
+  if(!str) return "";
+  const d = new Date(str+"T00:00:00");
+  return d.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+}
+
+/* LOAD DATA */
+async function loadData(){
+  const bar = document.getElementById("loadingBar");
+  const badge = document.getElementById("badgeSync");
+  bar.classList.add("show");
+  badge.textContent = "⟳ Memuat...";
+  badge.style.background = "rgba(255,255,255,.2)";
+
+  try {
+    const res = await fetch(API_URL + "?t=" + Date.now());
+    const json = await res.json();
+
+    if(json.ok && json.rows && json.rows.length > 1){
+      const headers = json.rows[0];
+      allData = json.rows.slice(1).map(r => {
+        const o = {};
+        headers.forEach((k,i) => o[String(k).trim()] = String(r[i]||"").trim());
+        return o;
+      });
+    } else {
+      allData = [];
+    }
+
+    badge.textContent = "✓ Tersinkron · " + new Date().toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
+    badge.style.background = "rgba(74,222,128,.3)";
+    updateSummary();
+    renderRekap();
+    if(activeTab === "detail") renderDetail();
+    if(activeTab === "belum") renderBelum();
+
+  } catch(e){
+    badge.textContent = "✗ Gagal load";
+    badge.style.background = "rgba(248,113,113,.3)";
+    console.error(e);
+  }
+  bar.classList.remove("show");
+}
+
+/* SUMMARY */
+function updateSummary(){
+  const today = todayStr();
+  const todayData = allData.filter(r => (r["Tanggal"]||'').trim() === today);
+  const totalProd = todayData.reduce((a,r)=>a+Number(r["Hasil Hari Ini"]||0),0);
+  const belumCek = allData.filter(r=>r["Status"]==="Belum Dicek").length;
+
+  const mesinHariIni = new Set(todayData.map(r=>r["Departemen"]+"|"+r["Nama Mesin"]));
+  const belumInput = SEMUA_MESIN.filter(m => !mesinHariIni.has(m.dep+"|"+m.mesin)).length;
+
+  document.getElementById("sumTotal").textContent = allData.length.toLocaleString();
+  document.getElementById("sumHariIni").textContent = todayData.length;
+  document.getElementById("sumProduksi").textContent = totalProd.toLocaleString();
+  document.getElementById("sumBelumCek").textContent = belumCek;
+  document.getElementById("sumBelumInput").textContent = belumInput;
+}
+
+/* TAB SWITCH */
+function switchTab(name, el){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  el.classList.add("active");
+  document.getElementById("panel-"+name).classList.add("active");
+  activeTab = name;
+  if(name==="rekap") renderRekap();
+  if(name==="detail") renderDetail();
+  if(name==="belum") renderBelum();
+}
+
+/* ============================
+   TAB 1: REKAP HARIAN
+   Per mesin, ringkas dan mudah dibaca
+   ============================ */
+function renderRekap(){
+  const tgl = document.getElementById("rekTgl").value;
+  const dep = document.getElementById("rekDep").value;
+
+  let filtered = allData.filter(r => {
+    if(tgl && (r["Tanggal"]||'').trim() !== tgl) return false;
+    if(dep && r["Departemen"] !== dep) return false;
+    return true;
+  });
+
+  const grid = document.getElementById("rekapGrid");
+
+  if(!filtered.length){
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#aaa;font-size:14px">Tidak ada data untuk tanggal ini.<br>Coba pilih tanggal lain atau refresh.</div>';
+    return;
+  }
+
+  /* Kelompokkan per mesin */
+  const byMesin = {};
+  filtered.forEach(r => {
+    const key = r["Departemen"] + "||" + r["Nama Mesin"];
+    if(!byMesin[key]) byMesin[key] = {dep:r["Departemen"], mesin:r["Nama Mesin"], rows:[]};
+    byMesin[key].rows.push(r);
+  });
+
+  grid.innerHTML = Object.values(byMesin).map(m => {
+    const totalProd = m.rows.reduce((a,r)=>a+Number(r["Hasil Hari Ini"]||0),0);
+    const rows = m.rows.map(r => {
+      const isCek = r["Status"]==="Sudah Dicek";
+      return `
+        <div class="mesin-row">
+          <div class="left">
+            <div class="op-name">${r["Operator"]}</div>
+            <div class="barang">${r["Nomor Barang"]} · ${r["Nama Barang"]} · ${r["Proses"]}</div>
+            <div style="margin-top:4px;display:flex;gap:6px;align-items:center">
+              <span class="badge ${isCek?'badge-ok':'badge-warn'}">${r["Status"]||"Belum Dicek"}</span>
+              <button class="btn-cek ${isCek?'sudah':''}" onclick="toggleStatus('${r["ID"]}')">
+                ${isCek?"↩ Batal":"✓ Cek"}
+              </button>
+            </div>
+          </div>
+          <div class="right">
+            <div class="hasil">${Number(r["Hasil Hari Ini"]||0).toLocaleString()}</div>
+            <div class="hasil-sub">pcs hari ini</div>
+            <div style="font-size:10px;color:#aaa;margin-top:2px">Total: ${Number(r["Total Barang"]||0).toLocaleString()}</div>
+          </div>
+        </div>`;
+    }).join("");
+
+    return `
+      <div class="mesin-card">
+        <div class="mesin-card-head">
+          <div>
+            <div class="mesin-name">${m.mesin}</div>
+            <div style="font-size:11px;color:#888;margin-top:1px">${m.dep}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:22px;font-weight:800;color:#1a7c4e">${totalProd.toLocaleString()}</div>
+            <div style="font-size:10px;color:#aaa">total pcs</div>
+          </div>
+        </div>
+        <div class="mesin-card-body">${rows}</div>
+      </div>`;
+  }).join("");
+}
+
+/* ============================
+   TAB 2: DATA DETAIL
+   Tabel lengkap dengan filter
+   ============================ */
+function renderDetail(){
+  const tgl = document.getElementById("detTgl").value;
+  const dep = document.getElementById("detDep").value;
+  const mesin = (document.getElementById("detMesin").value||"").toLowerCase();
+  const op = (document.getElementById("detOp").value||"").toLowerCase();
+
+  let filtered = allData.filter(r => {
+    if(tgl && (r["Tanggal"]||'').trim() !== tgl) return false;
+    if(dep && r["Departemen"] !== dep) return false;
+    if(mesin && !(r["Nama Mesin"]||"").toLowerCase().includes(mesin)) return false;
+    if(op && !(r["Operator"]||"").toLowerCase().includes(op)) return false;
+    return true;
+  });
+
+  const body = document.getElementById("detailBody");
+  const empty = document.getElementById("detailEmpty");
+  body.innerHTML = "";
+  empty.style.display = filtered.length ? "none" : "block";
+
+  filtered.forEach(r => {
+    const isCek = r["Status"]==="Sudah Dicek";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>
+        <span class="badge ${isCek?'badge-ok':'badge-warn'}">${r["Status"]||"Belum Dicek"}</span><br>
+        <button class="btn-cek ${isCek?'sudah':''}" onclick="toggleStatus('${r["ID"]}')" style="margin-top:4px">
+          ${isCek?"↩":"✓ Cek"}
+        </button>
+      </td>
+      <td>${r["Tanggal"]}</td>
+      <td>${r["Departemen"]}</td>
+      <td><b>${r["Nama Mesin"]}</b></td>
+      <td><b>${r["Operator"]}</b></td>
+      <td>${(r["Shift"]||"").split(" ")[0]}<br><span style="font-size:10px;color:#aaa">${r["Jam Mulai"]}–${r["Jam Selesai"]}</span></td>
+      <td style="font-family:monospace">${r["Nomor Barang"]}</td>
+      <td>${r["Nama Barang"]}</td>
+      <td>${r["Proses"]}</td>
+      <td class="num">${r["Kerja Sebenarnya"]} jam</td>
+      <td class="num">${r["Dandori"]}</td>
+      <td class="num">${r["Waktu Terbuang"]}</td>
+      <td style="font-size:11px;color:#666">${r["Alasan"]||"-"}</td>
+      <td class="num big-num">${Number(r["Hasil Hari Ini"]||0).toLocaleString()}</td>
+      <td class="num" style="font-weight:700;color:#1a3a5c">${Number(r["Total Barang"]||0).toLocaleString()}</td>
+      <td style="font-size:11px;color:#666;max-width:150px">${r["Catatan"]||"-"}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+/* ============================
+   TAB 3: BELUM INPUT
+   Mesin mana yang belum kirim nippo hari ini
+   ============================ */
+function renderBelum(){
+  const tgl = document.getElementById("belumTgl").value;
+  const sudahInput = new Set(
+    allData.filter(r=>(r["Tanggal"]||'').trim()===tgl).map(r=>r["Departemen"]+"|"+r["Nama Mesin"])
+  );
+
+  const belum = SEMUA_MESIN.filter(m => !sudahInput.has(m.dep+"|"+m.mesin));
+  const grid = document.getElementById("belumGrid");
+
+  if(!belum.length){
+    grid.innerHTML = '<div class="all-ok">✅ Semua mesin sudah input nippo untuk tanggal ini!</div>';
+    return;
+  }
+
+  grid.innerHTML = `
+    <div style="margin-bottom:12px;font-size:13px;color:#b45309;font-weight:600">
+      ⚠️ ${belum.length} mesin belum input nippo untuk ${formatTgl(tgl)}:
+    </div>
+    <div class="belum-grid">
+      ${belum.map(m => {
+        const lastData = allData.filter(r=>r["Departemen"]===m.dep&&r["Nama Mesin"]===m.mesin);
+        const last = lastData.length ? lastData[lastData.length-1] : null;
+        return `
+          <div class="belum-card">
+            <div class="mesin">${m.mesin}</div>
+            <div class="dep">${m.dep}</div>
+            <div class="last">${last ? "Terakhir input: "+last["Tanggal"] : "Belum pernah input"}</div>
+          </div>`;
+      }).join("")}
+    </div>`;
+}
+
+/* ============================
+   STATUS CEK
+   ============================ */
+async function toggleStatus(id){
+  const row = allData.find(r => r["ID"] === String(id));
+  if(!row) return;
+  const newStatus = row["Status"]==="Belum Dicek" ? "Sudah Dicek" : "Belum Dicek";
+  row["Status"] = newStatus;
+
+  /* Update tampilan dulu, kirim ke server di background */
+  renderRekap();
+  if(activeTab==="detail") renderDetail();
+  updateSummary();
+
+  try {
+    await fetch(API_URL, {
+      method:"POST",
+      body: JSON.stringify({action:"updateStatus", id:String(id), status:newStatus})
+    });
+  } catch(e){ console.error(e); }
+}
+
+/* ============================
+   EXPORT CSV
+   ============================ */
+function exportCSV(){
+  if(!allData.length){ alert("Belum ada data."); return; }
+  const fields = ["Status","Tanggal","Departemen","Nama Mesin","Shift","Lembur",
+    "Jam Mulai","Jam Selesai","Operator","Nomor Barang","Nama Barang","Proses",
+    "Catatan Barang","Jam Efektif","Dandori","Waktu Terbuang","Kerja Sebenarnya",
+    "Hasil Hari Ini","Total Barang","Alasan","Catatan"];
+  const rows = allData.map(r=>fields.map(f=>'"'+String(r[f]||"").replaceAll('"','""')+'"').join(","));
+  const csv = "\uFEFF" + fields.join(",") + "\n" + rows.join("\n");
+  const blob = new Blob([csv],{type:"text/csv;charset=utf-8;"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href=url; a.download="nippo-"+todayStr()+".csv"; a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* Auto refresh setiap 2 menit */
+setInterval(loadData, 120000);
+</script>
+</body>
+</html>
